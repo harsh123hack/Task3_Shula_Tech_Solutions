@@ -1,0 +1,68 @@
+import re
+from email import policy
+from email.parser import BytesParser
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+# Function to extract URLs from email content
+def extract_urls(content):
+    urls = re.findall(r'(https?://\S+)', content)
+    return urls
+
+# Function to check for misspelled domains
+def check_misspelled_domains(urls):
+    suspicious_domains = ['g00gle.com', 'paypa1.com', 'amozon.com']
+    for url in urls:
+        for domain in suspicious_domains:
+            if domain in url:
+                return True
+    return False
+
+# Function to analyze email content
+def analyze_email(content):
+    urls = extract_urls(content)
+    if check_misspelled_domains(urls):
+        return True
+    if 'immediate action required' in content.lower():
+        return True
+    return False
+
+# Example email content (use real email data for testing)
+email_content = """
+Dear User,
+
+Please click on the following link to update your account information:
+https://g00gle.com/update
+
+Immediate action required.
+
+Thank you,
+Customer Support
+"""
+
+# Analyze the example email
+is_phishing = analyze_email(email_content)
+print("Phishing Email Detected:" if is_phishing else "Email is Safe")
+
+# Machine learning part (using a dataset)
+# Example dataset
+emails = ["Dear User, update your account at https://g00gle.com", "Hello, how are you?"]
+labels = [1, 0]  # 1 for phishing, 0 for safe
+
+# Vectorize email content
+vectorizer = CountVectorizer()
+X = vectorizer.fit_transform(emails)
+y = labels
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train a classifier
+classifier = MultinomialNB()
+classifier.fit(X_train, y_train)
+
+# Make predictions
+y_pred = classifier.predict(X_test)
+print("Accuracy:", accuracy_score(y_test, y_pred))
